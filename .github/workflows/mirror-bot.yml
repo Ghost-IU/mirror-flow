@@ -1,4 +1,4 @@
-name: MirrorBot Environment
+name: Userbot Environment
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
    
 env:
   # Change these values if you have forked it for your own works
-  GitHubMail: "ghost95.iu@gmail.com"
-  GitHubName: "Ghost-IU"
-  Branch: "main"
+  GitHubMail: "projectghost.iu@gmail.com"
+  GitHubName: "Ghost-IU" 
+  Branch: "master"
 
 jobs:
   build:
@@ -26,35 +26,25 @@ jobs:
           git config --global user.name ${GitHubName}
           git config --global credential.helper store
           echo "https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com" > ~/.git-credentials
-
-      # Cleanup The Actions Workspace Using Custom Composite Run Actions
-      - uses: rokibhasansagar/slimhub_actions@main
-
       - name: Clone The Secret Mirror Repository
         run: |
-          git clone https://"${{ secrets.GH_TOKEN }}"@github.com/AtomicXZ/MirrorBawt.git -b master source
-
+          git clone https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com/${{ secrets.MIRROR_REPOSLUG }} -b ${Branch} source
       - name: Compile The Mirroring Docker Container
         run: |
           cd source || exit 1
-          docker container prune --force || true
-          docker build . --rm --force-rm --compress --no-cache=true --pull --file Dockerfile -t mirror-bot
-          docker image ls
-
+          docker run -d --restart on-failure --name userge_1 userbot
       - name: running Docker
         timeout-minutes: 340
         continue-on-error: true
         run: |
-          docker run --privileged --rm -i mirror-bot
-
+          docker build . -t mirrorbot
       - name: Loop Workflow
         continue-on-error: true
         run: |
           # ${GITHUB_REPOSITORY} is the repo slug which runs this script
-          git clone https://${{ secrets.GH_TOKEN }}@github.com/AtomicXZ/mirror-flow loop
+          git clone https://${{ secrets.GH_TOKEN }}@github.com/${GITHUB_REPOSITORY} loop
           cd loop || exit 1
           echo $(( RANDOM - ( RANDOM % RANDOM ) )) > looper.txt
           git add looper.txt
           git commit -m "Workflow : Loop"
-          git push -q https://${{ secrets.GH_TOKEN }}@github.com/AtomicXZ/mirror-flow HEAD:main
-
+          git push -q https://${{ secrets.GH_TOKEN }}@github.com/${GITHUB_REPOSITORY} HEAD:main
